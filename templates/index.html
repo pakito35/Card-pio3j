@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápio Digital</title>
+    <link rel="icon" href="/static/images/logo.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css?family=Exo:400,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="carrinho-flutuante">
+        <a href="/carrinho" class="carrinho-icon">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="carrinho-contador">{{ session['carrinho']|length }}</span>
+        </a>
+    </div>
+    <div class="area">
+        <div class="menu-container">
+            <h1>Nosso Cardápio</h1>
+            
+            {% for categoria, items in menu.items() %}
+            <div class="categoria">
+                <h2>{{ categoria }}</h2>
+                <div class="items-grid">
+                    {% for item in items %}
+                    <div class="menu-item">
+                        <img src="{{ item.imagem }}" alt="{{ item.nome }}">
+                        <h3>{{ item.nome }}</h3>
+                        <p class="descricao">{{ item.descricao }}</p>
+                        <p class="preco">R$ {{ "%.2f"|format(item.preco) }}</p>
+                        <button class="pedir-button">Fazer Pedido</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script src="/static/js/toast.js"></script>
+    <script src="/static/js/menu.js"></script>
+</body>
+</html>
