@@ -119,6 +119,7 @@ menu = {
 ultimo_pedido_id = 0
 
 @app.route('/pedidos-stream')
+@read_only_db
 def pedidos_stream():
     def event_stream():
         global ultimo_pedido_id
@@ -212,6 +213,7 @@ def finalizar_pedido():
         return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/admin')
+@read_only_db
 def admin():
     pedidos = buscar_pedidos()
     return render_template('admin.html', pedidos=pedidos)
