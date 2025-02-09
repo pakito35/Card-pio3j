@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Finalizar pedido
-    document.querySelector('.finalizar-btn')?.addEventListener('click', finalizarPedido);
+    // Remover a função finalizarPedido antiga
+    document.querySelector('.finalizar-btn')?.addEventListener('click', abrirFormularioCliente);
 });
 
 async function atualizarQuantidade(nome, quantidade) {
@@ -67,14 +67,36 @@ async function removerItem(nome) {
     }
 }
 
-async function finalizarPedido() {
+// Manter apenas a versão com o formulário
+function abrirFormularioCliente() {
+    document.getElementById('modal-cliente').style.display = 'flex';
+}
+
+function fecharModal() {
+    document.getElementById('modal-cliente').style.display = 'none';
+}
+
+document.getElementById('form-cliente').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const dadosCliente = {
+        nome: document.getElementById('nome').value,
+        endereco: document.getElementById('endereco').value,
+        telefone: document.getElementById('telefone').value
+    };
+    
     try {
         const response = await fetch('/finalizar_pedido', {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dadosCliente)
         });
-        const data = await response.json();
         
+        const data = await response.json();
         if (data.status === 'success') {
+            fecharModal();
             toast.show('Pedido finalizado com sucesso!');
             setTimeout(() => {
                 window.location.href = '/';
@@ -85,5 +107,13 @@ async function finalizarPedido() {
     } catch (error) {
         console.error('Erro ao finalizar pedido:', error);
         toast.show('Erro ao finalizar pedido', 'error');
+    }
+});
+
+// Fechar modal quando clicar fora
+window.onclick = function(event) {
+    const modal = document.getElementById('modal-cliente');
+    if (event.target === modal) {
+        fecharModal();
     }
 }

@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request, session, Response
 from database import criar_banco, salvar_pedido, buscar_pedidos, buscar_novos_pedidos
+from decorators import read_only_db
 import sqlite3
 import json
 import time
@@ -180,6 +181,7 @@ def atualizar_quantidade():
     
     for item in carrinho:
         if item['nome'] == data['nome']:
+
             item['quantidade'] = int(data['quantidade'])
             break
     
@@ -195,13 +197,15 @@ def remover_item():
     return jsonify({'status': 'success'})
 
 @app.route('/finalizar_pedido', methods=['POST'])
+@read_only_db
 def finalizar_pedido():
     try:
         carrinho = session.get('carrinho', [])
         if not carrinho:
             return jsonify({'status': 'error', 'message': 'Carrinho vazio'})
         
-        pedido_id = salvar_pedido(carrinho)
+        dados_cliente = request.json
+        pedido_id = salvar_pedido(carrinho, dados_cliente)
         session['carrinho'] = []
         return jsonify({'status': 'success', 'pedido_id': pedido_id})
     except Exception as e:
@@ -213,6 +217,7 @@ def admin():
     return render_template('admin.html', pedidos=pedidos)
 
 @app.route('/excluir_pedido/<int:pedido_id>', methods=['DELETE'])
+@read_only_db
 def excluir_pedido(pedido_id):
     try:
         conn = sqlite3.connect('cardapio.db')
