@@ -1,8 +1,15 @@
 import sqlite3
 from datetime import datetime
 
+def get_db_connection(readonly=False):
+    """Cria uma conexão com o banco de dados"""
+    if readonly:
+        uri = 'file:cardapio.db?mode=ro'  # modo somente leitura
+        return sqlite3.connect(uri, uri=True)
+    return sqlite3.connect('cardapio.db')
+
 def criar_banco():
-    conn = sqlite3.connect('cardapio.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -24,11 +31,22 @@ def criar_banco():
     )
     ''')
     
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS clientes_pedido (
+        pedido_id INTEGER PRIMARY KEY,
+        nome TEXT NOT NULL,
+        endereco TEXT NOT NULL,
+        telefone TEXT NOT NULL,
+        FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
+    )
+    ''')
+    
     conn.commit()
     conn.close()
 
-def salvar_pedido(items_carrinho):
-    conn = sqlite3.connect('cardapio.db')
+def salvar_pedido(items_carrinho, dados_cliente):
+    """Função de escrita"""
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     valor_total = sum(item['preco'] * item['quantidade'] for item in items_carrinho)
@@ -43,12 +61,18 @@ def salvar_pedido(items_carrinho):
         VALUES (?, ?, ?, ?)
         ''', (pedido_id, item['nome'], item['quantidade'], item['preco']))
     
+    cursor.execute('''
+    INSERT INTO clientes_pedido (pedido_id, nome, endereco, telefone)
+    VALUES (?, ?, ?, ?)
+    ''', (pedido_id, dados_cliente['nome'], dados_cliente['endereco'], dados_cliente['telefone']))
+    
     conn.commit()
     conn.close()
     return pedido_id
 
 def buscar_pedidos():
-    conn = sqlite3.connect('cardapio.db')
+    """Função somente leitura"""
+    conn = get_db_connection(readonly=True)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
@@ -73,7 +97,8 @@ def buscar_pedidos():
     return [dict(row) for row in pedidos]
 
 def buscar_novos_pedidos(ultimo_id):
-    conn = sqlite3.connect('cardapio.db')
+    """Função somente leitura"""
+    conn = get_db_connection(readonly=True)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
