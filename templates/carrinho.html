@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrinho - Cardápio Digital</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="area">
+        <div class="carrinho-container">
+            <h1>Seu Carrinho</h1>
+            
+            <div class="carrinho-items">
+                {% if carrinho %}
+                    {% for item in carrinho %}
+                    <div class="carrinho-item" data-nome="{{ item.nome }}">
+                        <h3>{{ item.nome }}</h3>
+                        <div class="quantidade-controle">
+                            <button class="qtd-btn menos">-</button>
+                            <input type="number" value="{{ item.quantidade }}" min="1" class="qtd-input">
+                            <button class="qtd-btn mais">+</button>
+                        </div>
+                        <p class="preco">R$ {{ "%.2f"|format(item.preco * item.quantidade) }}</p>
+                        <button class="remover-btn">Remover</button>
+                    </div>
+                    {% endfor %}
+                    <div class="carrinho-total">
+                        <h2>Total: R$ {{ "%.2f"|format(total) }}</h2>
+                        <button class="finalizar-btn">Finalizar Pedido</button>
+                    </div>
+                {% else %}
+                    <p class="carrinho-vazio">Seu carrinho está vazio</p>
+                    <a href="/" class="voltar-btn">Voltar ao Cardápio</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/toast.js"></script>
+    <script src="/static/js/carrinho.js"></script>
+</body>
+</html>
