@@ -1,0 +1,617 @@
+@import url('https://fonts.googleapis.com/css?family=Exo:400,700');
+
+* {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Exo', sans-serif;
+}
+
+.context {
+    width: 100%;
+    position: absolute;
+    top: 30vh;
+}
+
+.context h1 {
+    text-align: center;
+    color: #fefefe;
+    font-size: 150px;
+}
+
+.context h3 {
+    text-align: center;
+    color: #e4b714;
+    font-size: 30px;
+}
+
+.area {
+    background: #1a1a1a;
+    background: linear-gradient(to right, #0f0f0f, #1a1a1a);
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.context {
+    text-align: center;
+    color: #fff;
+}
+
+.button-container {
+    margin-top: 50px;
+}
+
+.register-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: transparent;
+    border: 2px solid #fff;
+    color: #fff;
+    text-decoration: none;
+    font-size: 18px;
+    border-radius: 15px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.register-button:hover {
+    transform: scale(1.09);
+}
+
+/* Responsive Design */
+
+/* For Mobile Devices */
+@media (max-width: 767px) {
+    .context h1 {
+        font-size: 80px;
+        /* Adjust the font size for smaller screens */
+    }
+
+    .context h3 {
+        font-size: 20px;
+        /* Adjust the font size for smaller screens */
+    }
+}
+
+/* For Tablet Devices */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .context h1 {
+        font-size: 120px;
+        /* Adjust the font size for tablet screens */
+    }
+
+    .context h3 {
+        font-size: 25px;
+        /* Adjust the font size for tablet screens */
+    }
+}
+
+/* Estilos do menu */
+.menu-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.menu-container h1 {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    text-transform: uppercase;
+}
+
+.categoria {
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.categoria h2 {
+    color: #00ff88;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.8em;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.menu-item {
+    background: #2d2d2d;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.menu-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    background: #333333;
+}
+
+.menu-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 2px solid #333333;
+}
+
+.menu-item h3 {
+    color: #ffffff;
+    margin-bottom: 10px;
+    font-size: 1.3em;
+}
+
+.menu-item .descricao {
+    color: #b3b3b3;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.menu-item .preco {
+    color: #00ff88;
+    font-size: 1.4em;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+    .menu-container {
+        padding: 10px;
+    }
+    
+    .items-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .menu-item img {
+        height: 150px;
+    }
+}
+
+/* Estilos do botão "Pedir" */
+.pedir-button {
+    background: #00ff88;
+    color: #1a1a1a;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 255, 136, 0.2);
+}
+
+.pedir-button:hover {
+    background: #00cc6a;
+    transform: scale(1.05);
+    box-shadow: 0 6px 8px rgba(0, 255, 136, 0.3);
+}
+
+.pedir-button:active {
+    transform: scale(0.95);
+}
+
+/* Ajuste responsivo para o botão */
+@media (max-width: 767px) {
+    .pedir-button {
+        padding: 8px 16px;
+        font-size: 0.9em;
+    }
+}
+
+/* Estilos do Carrinho */
+.carrinho-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.carrinho-container h1 {
+    color: #00ff88;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.carrinho-item {
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.carrinho-item h3 {
+    color: #ffffff;
+    font-size: 1.3em;
+    margin: 0;
+    flex: 1;
+}
+
+.carrinho-item .preco {
+    color: #00ff88;
+    font-size: 1.4em;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+    margin: 0;
+    min-width: 120px;
+    text-align: right;
+}
+
+.quantidade-controle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qtd-btn {
+    background: #00ff88;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: #1a1a1a;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.qtd-btn:hover {
+    background: #00cc6a;
+}
+
+.qtd-input {
+    width: 50px;
+    text-align: center;
+    background: #2d2d2d;
+    border: 1px solid #00ff88;
+    color: #fff;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.remover-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.remover-btn:hover {
+    background: #cc0000;
+}
+
+.carrinho-total {
+    text-align: right;
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 10px;
+}
+
+.carrinho-total h2 {
+    color: #00ff88;
+    font-size: 1.6em;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+    margin-bottom: 15px;
+}
+
+.finalizar-btn {
+    background: #00ff88;
+    color: #1a1a1a;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.finalizar-btn:hover {
+    background: #00cc6a;
+    transform: scale(1.05);
+}
+
+.carrinho-vazio {
+    text-align: center;
+    color: #fff;
+    font-size: 1.2em;
+    margin: 30px 0;
+}
+
+.voltar-btn {
+    display: block;
+    text-align: center;
+    color: #00ff88;
+    text-decoration: none;
+    margin-top: 20px;
+    font-size: 1.1em;
+}
+
+/* Estilos do Carrinho Flutuante */
+.carrinho-flutuante {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.carrinho-icon {
+    background: #00ff88;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.carrinho-icon i {
+    font-size: 24px;
+    color: #1a1a1a;
+}
+
+.carrinho-icon:hover {
+    transform: scale(1.1);
+    background: #00cc6a;
+}
+
+.carrinho-contador {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilos do Toast */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.toast {
+    background: rgba(0, 255, 136, 0.95);
+    color: #1a1a1a;
+    padding: 12px 24px;
+    border-radius: 8px;
+    margin: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+    animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-out 2.5s forwards;
+    max-width: 300px;
+}
+
+.toast.error {
+    background: rgba(255, 68, 68, 0.95);
+    color: white;
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* Estilos do Painel Admin */
+.admin-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-container h1 {
+    color: #00ff88;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.pedidos-list {
+    display: grid;
+    gap: 20px;
+}
+
+.pedido-card {
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    animation: none; /* Inicialmente sem animação */
+}
+
+@keyframes novoPedido {
+    0% {
+        transform: translateX(-20px);
+        background: rgba(0, 255, 136, 0.2);
+    }
+    100% {
+        transform: translateX(0);
+        background: rgba(30, 30, 30, 0.95);
+    }
+}
+
+.pedido-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.pedido-id {
+    color: #00ff88;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.pedido-data {
+    color: #b3b3b3;
+    font-size: 0.9em;
+}
+
+.pedido-items {
+    color: #ffffff;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.pedido-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pedido-item:last-child {
+    border-bottom: none;
+}
+
+.pedido-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.imprimir-btn {
+    background: #00ff88;
+    color: #1a1a1a;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.imprimir-btn i {
+    font-size: 1.1em;
+}
+
+.imprimir-btn:hover {
+    background: #00cc6a;
+    transform: scale(1.05);
+}
+
+.pedido-total {
+    color: #00ff88;
+    font-size: 1.3em;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.no-pedidos {
+    text-align: center;
+    color: #ffffff;
+    font-size: 1.2em;
+    padding: 40px;
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 10px;
+}
+
+.pedido-acoes {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.excluir-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.excluir-btn:hover {
+    background: #cc0000;
+    transform: scale(1.05);
+}
+
+/* Responsive adjustments for admin panel */
+@media (max-width: 767px) {
+    .admin-container {
+        padding: 10px;
+    }
+    
+    .pedido-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
