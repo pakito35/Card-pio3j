@@ -239,4 +239,5 @@ def excluir_pedido(pedido_id):
 
 if __name__ == '__main__':
     criar_banco()
-    app.run(debug=True)
+    # Modificar para usar configurações de produção
+    app.run(host='0.0.0.0', port=8080, debug=False)
