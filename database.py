@@ -1,3 +1,4 @@
+from flask import g
 import sqlite3
 from datetime import datetime
 
@@ -63,8 +64,14 @@ def salvar_pedido(items_carrinho, dados_cliente):
     return pedido_id
 
 def buscar_pedidos():
-    conn = sqlite3.connect('cardapio.db')
-    conn.row_factory = sqlite3.Row
+    if hasattr(g, 'db'):
+        # Usa a conexão somente leitura se disponível
+        conn = g.db
+    else:
+        # Caso contrário, cria uma nova conexão
+        conn = sqlite3.connect('cardapio.db')
+        conn.row_factory = sqlite3.Row
+    
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -84,12 +91,19 @@ def buscar_pedidos():
     ''')
     
     pedidos = cursor.fetchall()
-    conn.close()
+    
+    if not hasattr(g, 'db'):
+        conn.close()
+        
     return [dict(row) for row in pedidos]
 
 def buscar_novos_pedidos(ultimo_id):
-    conn = sqlite3.connect('cardapio.db')
-    conn.row_factory = sqlite3.Row
+    if hasattr(g, 'db'):
+        conn = g.db
+    else:
+        conn = sqlite3.connect('cardapio.db')
+        conn.row_factory = sqlite3.Row
+        
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -110,5 +124,8 @@ def buscar_novos_pedidos(ultimo_id):
     ''', (ultimo_id,))
     
     pedidos = cursor.fetchall()
-    conn.close()
+    
+    if not hasattr(g, 'db'):
+        conn.close()
+        
     return [dict(row) for row in pedidos]
