@@ -1,20 +1,24 @@
 from functools import wraps
-from flask import jsonify, g
+from flask import g, abort
+import sqlite3
 
 def read_only_db(f):
     """Decorator para controlar o acesso de escrita ao banco de dados"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        g.read_only = True
         try:
-            return f(*args, **kwargs)
-        except Exception as e:
-            if "readonly database" in str(e).lower():
-                return jsonify({
-                    'status': 'error',
-                    'message': 'Sistema em modo somente leitura no momento'
-                }), 403
-            raise e
+            # Abre conexão em modo somente leitura
+            g.db = sqlite3.connect('file:cardapio.db?mode=ro', uri=True)
+            g.db.row_factory = sqlite3.Row
+            result = f(*args, **kwargs)
+            return result
+        except sqlite3.OperationalError as e:
+            if "readonly" in str(e):
+                abort(403, description="Operação de escrita não permitida no modo somente leitura")
+            raise
+        finally:
+            if hasattr(g, 'db'):
+                g.db.close()
     return decorated_function
 
 # Importante: garantir que o decorator seja exportado
