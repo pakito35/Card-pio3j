@@ -1,10 +1,11 @@
 from functools import wraps
-from flask import jsonify
+from flask import jsonify, g
 
 def read_only_db(f):
     """Decorator para controlar o acesso de escrita ao banco de dados"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        g.read_only = True
         try:
             return f(*args, **kwargs)
         except Exception as e:
