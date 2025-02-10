@@ -5,6 +5,7 @@ import os
 import logging
 from datetime import datetime
 from flask_socketio import SocketIO, emit
+import stat
 
 # Configurar logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,11 +14,28 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Caminho absoluto para o banco de dados
-basedir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(basedir, 'orders.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+# Configuração do banco de dados
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Garante que o diretório tem permissões corretas
+try:
+    if not os.path.exists(basedir):
+        os.makedirs(basedir, mode=0o777)
+    
+    # Define permissões para o arquivo do banco de dados
+    if os.path.exists(db_path):
+        os.chmod(db_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777
+    
+    # Define permissões para o diretório
+    os.chmod(basedir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777
+    
+    logger.info(f"Permissões definidas com sucesso para {db_path}")
+except Exception as e:
+    logger.error(f"Erro ao definir permissões: {str(e)}")
 
 logger.debug(f"Caminho do banco de dados: {db_path}")
 
@@ -128,55 +146,65 @@ def menu():
 def order():
     try:
         data = request.get_json()
-        logger.debug(f"Dados recebidos no servidor: {data}")  # Debug
+        logger.debug(f"Dados recebidos no servidor: {data}")
         
         if not data:
-            raise ValueError("Dados do pedido não fornecidos")
+            return jsonify({'error': "Dados do pedido não fornecidos"}), 400
         
         # Validação dos dados
         required_fields = ['name', 'address', 'items', 'total']
         for field in required_fields:
             if field not in data:
-                raise ValueError(f"Campo obrigatório ausente: {field}")
+                return jsonify({'error': f"Campo obrigatório ausente: {field}"}), 400
         
-        # Criar pedido
-        new_order = Order(
-            name=data['name'],
-            address=data['address'],
-            items=data['items'],  # Já deve ser uma string JSON
-            total=float(data['total']),
-            status='Novo',
-            created_at=datetime.utcnow()
-        )
-        
-        # Salvar no banco de dados
-        with app.app_context():
+        try:
+            # Valida o formato do JSON de items
+            items = json.loads(data['items']) if isinstance(data['items'], str) else data['items']
+            # Converte items para string JSON se não for
+            items_json = json.dumps(items) if not isinstance(data['items'], str) else data['items']
+            
+            # Converte total para float
+            total = float(str(data['total']).replace('R$', '').replace(',', '.').strip())
+            
+            # Criar pedido
+            new_order = Order(
+                name=data['name'],
+                address=data['address'],
+                items=items_json,
+                total=total,
+                status='Novo',
+                created_at=datetime.utcnow()
+            )
+            
             db.session.add(new_order)
             db.session.commit()
-            logger.debug(f"Pedido salvo com sucesso: ID {new_order.id}")
             
-            # Emite evento com todos os dados necessários para impressão
+            # Emite evento com dados formatados
             order_data = {
                 'id': new_order.id,
                 'name': new_order.name,
                 'address': new_order.address,
-                'items': new_order.items,
-                'total': f"R$ {new_order.total:.2f}",
+                'items': items_json,
+                'total': f"R$ {total:.2f}",
                 'status': new_order.status,
                 'created_at': new_order.created_at.strftime('%d/%m/%Y %H:%M')
             }
             socketio.emit('new_order', order_data)
-        
-        return jsonify({
-            'message': 'Pedido realizado com sucesso!',
-            'order_id': new_order.id
-        })
-    
+            
+            return jsonify({
+                'message': 'Pedido realizado com sucesso!',
+                'order_id': new_order.id
+            })
+            
+        except json.JSONDecodeError:
+            return jsonify({'error': "Formato inválido dos itens do pedido"}), 400
+        except ValueError as e:
+            return jsonify({'error': f"Erro ao converter dados: {str(e)}"}), 400
+            
     except Exception as e:
         logger.error(f"Erro ao processar pedido: {str(e)}")
-        import traceback
         logger.error(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': "Erro interno do servidor"}), 500
 
 @app.route('/update_status/<int:order_id>', methods=['POST'])
 def update_status(order_id):
@@ -242,9 +270,20 @@ def get_orders():
         logger.error(f"Erro ao buscar pedidos: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# Certifique-se de que o banco de dados existe
-with app.app_context():
-    db.create_all()
+# Inicialização do banco de dados com tratamento de erros
+def init_db():
+    try:
+        with app.app_context():
+            db.create_all()
+            # Define permissões após criar o banco
+            os.chmod(db_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            logger.info("Banco de dados inicializado com sucesso")
+    except Exception as e:
+        logger.error(f"Erro ao inicializar banco de dados: {str(e)}")
+        raise
+
+# Inicializa o banco de dados
+init_db()
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
