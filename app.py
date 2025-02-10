@@ -128,55 +128,65 @@ def menu():
 def order():
     try:
         data = request.get_json()
-        logger.debug(f"Dados recebidos no servidor: {data}")  # Debug
+        logger.debug(f"Dados recebidos no servidor: {data}")
         
         if not data:
-            raise ValueError("Dados do pedido não fornecidos")
+            return jsonify({'error': "Dados do pedido não fornecidos"}), 400
         
         # Validação dos dados
         required_fields = ['name', 'address', 'items', 'total']
         for field in required_fields:
             if field not in data:
-                raise ValueError(f"Campo obrigatório ausente: {field}")
+                return jsonify({'error': f"Campo obrigatório ausente: {field}"}), 400
         
-        # Criar pedido
-        new_order = Order(
-            name=data['name'],
-            address=data['address'],
-            items=data['items'],  # Já deve ser uma string JSON
-            total=float(data['total']),
-            status='Novo',
-            created_at=datetime.utcnow()
-        )
-        
-        # Salvar no banco de dados
-        with app.app_context():
+        try:
+            # Valida o formato do JSON de items
+            items = json.loads(data['items']) if isinstance(data['items'], str) else data['items']
+            # Converte items para string JSON se não for
+            items_json = json.dumps(items) if not isinstance(data['items'], str) else data['items']
+            
+            # Converte total para float
+            total = float(str(data['total']).replace('R$', '').replace(',', '.').strip())
+            
+            # Criar pedido
+            new_order = Order(
+                name=data['name'],
+                address=data['address'],
+                items=items_json,
+                total=total,
+                status='Novo',
+                created_at=datetime.utcnow()
+            )
+            
             db.session.add(new_order)
             db.session.commit()
-            logger.debug(f"Pedido salvo com sucesso: ID {new_order.id}")
             
-            # Emite evento com todos os dados necessários para impressão
+            # Emite evento com dados formatados
             order_data = {
                 'id': new_order.id,
                 'name': new_order.name,
                 'address': new_order.address,
-                'items': new_order.items,
-                'total': f"R$ {new_order.total:.2f}",
+                'items': items_json,
+                'total': f"R$ {total:.2f}",
                 'status': new_order.status,
                 'created_at': new_order.created_at.strftime('%d/%m/%Y %H:%M')
             }
             socketio.emit('new_order', order_data)
-        
-        return jsonify({
-            'message': 'Pedido realizado com sucesso!',
-            'order_id': new_order.id
-        })
-    
+            
+            return jsonify({
+                'message': 'Pedido realizado com sucesso!',
+                'order_id': new_order.id
+            })
+            
+        except json.JSONDecodeError:
+            return jsonify({'error': "Formato inválido dos itens do pedido"}), 400
+        except ValueError as e:
+            return jsonify({'error': f"Erro ao converter dados: {str(e)}"}), 400
+            
     except Exception as e:
         logger.error(f"Erro ao processar pedido: {str(e)}")
-        import traceback
         logger.error(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': "Erro interno do servidor"}), 500
 
 @app.route('/update_status/<int:order_id>', methods=['POST'])
 def update_status(order_id):
