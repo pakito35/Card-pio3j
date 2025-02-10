@@ -5,6 +5,7 @@ import os
 import logging
 from datetime import datetime
 from flask_socketio import SocketIO, emit
+import stat
 
 # Configurar logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,6 +19,22 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'orders.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Garante que o diretório tem permissões corretas
+try:
+    if not os.path.exists(basedir):
+        os.makedirs(basedir, mode=0o777)
+    
+    # Define permissões para o arquivo do banco de dados
+    if os.path.exists(db_path):
+        os.chmod(db_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777
+    
+    # Define permissões para o diretório
+    os.chmod(basedir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777
+    
+    logger.info(f"Permissões definidas com sucesso para {db_path}")
+except Exception as e:
+    logger.error(f"Erro ao definir permissões: {str(e)}")
 
 logger.debug(f"Caminho do banco de dados: {db_path}")
 
@@ -252,9 +269,20 @@ def get_orders():
         logger.error(f"Erro ao buscar pedidos: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# Certifique-se de que o banco de dados existe
-with app.app_context():
-    db.create_all()
+# Inicialização do banco de dados com tratamento de erros
+def init_db():
+    try:
+        with app.app_context():
+            db.create_all()
+            # Define permissões após criar o banco
+            os.chmod(db_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            logger.info("Banco de dados inicializado com sucesso")
+    except Exception as e:
+        logger.error(f"Erro ao inicializar banco de dados: {str(e)}")
+        raise
+
+# Inicializa o banco de dados
+init_db()
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
