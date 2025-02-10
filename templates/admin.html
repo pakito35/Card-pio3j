@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Adicionar fonte Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Adicionar função de Toast
+        let toastContainer;
+
+        function createToastContainer() {
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.className = 'toast-container';
+                document.body.appendChild(toastContainer);
+            }
+        }
+
+        function showToast(message, type = 'success', duration = 3000) {
+            createToastContainer();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-in-out forwards';
+                setTimeout(() => {
+                    toastContainer.removeChild(toast);
+                    if (toastContainer.children.length === 0) {
+                        document.body.removeChild(toastContainer);
+                        toastContainer = null;
+                    }
+                }, 300);
+            }, duration);
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='websocket-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='print-manager.js') }}"></script>
+</head>
+<body>
+    <h1>Painel Administrativo</h1>
+    <div class="admin-container">
+        {% if error %}
+            <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        {% if orders %}
+            <h1>Pedidos</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data/Hora</th>
+                        <th>Cliente</th>
+                        <th>Endereço</th>
+                        <th>Itens</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.created_at }}</td>
+                            <td>{{ order.name }}</td>
+                            <td>{{ order.address }}</td>
+                            <td>
+                                <ul>
+                                {% for item in order.items | fromjson %}
+                                    <li>{{ item.name }} - {{ item.price }} x {{ item.quantity }}</li>
+                                {% endfor %}
+                                </ul>
+                            </td>
+                            <td>{{ order.total }}</td>
+                            <td>{{ order.status }}</td>
+                            <td>
+                                <button onclick="printOrder({{ order.id }})" class="print-button-small" title="Imprimir Pedido">
+                                    <span class="print-icon">🖨️</span>
+                                    <div class="print-tooltip">Imprimir Pedido #{{ order.id }}</div>
+                                </button>
+                                <button onclick="deleteOrder({{ order.id }})" class="delete-button-small" title="Excluir Pedido">
+                                    <span class="delete-icon">🗑️</span>
+                                    <div class="delete-tooltip">Excluir Pedido #{{ order.id }}</div>
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Nenhum pedido encontrado.</p>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('menu') }}" class="back-button">Voltar ao Cardápio</a>
+    <script>
+        function updateStatus(orderId, newStatus) {
+            fetch(`/update_status/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Erro ao atualizar status: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Erro ao atualizar status');
+            });
+        }
+
+        function printOrder(orderId) {
+            const rows = document.querySelectorAll('table tbody tr');
+            const orderRow = Array.from(rows).find(row => row.cells[0].textContent.trim() === orderId.toString());
+            
+            if (!orderRow) {
+                showToast('Erro ao encontrar pedido para impressão', 'error');
+                return;
+            }
+
+            try {
+                const printWindow = window.open('', 'Print_Window', 'width=600,height=800');
+                if (!printWindow) {
+                    showToast('Por favor, permita popups para imprimir o pedido', 'error');
+                    return;
+                }
+
+                const printContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Pedido #${orderId}</title>
+                        <style>
+                            body {
+                                font-family: 'Courier New', monospace;
+                                margin: 0;
+                                padding: 10px;
+                                font-size: 12px;
+                                width: 80mm;
+                            }
+                            .receipt { width: 100%; }
+                            .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+                            .header h2 { margin: 0; font-size: 16px; }
+                            .info-row { margin: 5px 0; display: flex; justify-content: space-between; }
+                            .info-label { font-weight: bold; }
+                            .items { margin: 10px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; }
+                            .total { text-align: right; font-weight: bold; margin: 10px 0; }
+                            .footer { text-align: center; margin-top: 20px; font-size: 10px; border-top: 1px dashed #000; padding-top: 10px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="receipt">
+                            <div class="header">
+                                <h2>COMPROVANTE DE PEDIDO</h2>
+                                <p>#${orderId}</p>
+                                <p>${new Date().toLocaleString()}</p>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Cliente:</span>
+                                <span>${orderRow.cells[2].textContent}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Endereço:</span>
+                                <span>${orderRow.cells[3].textContent}</span>
+                            </div>
+                            <div class="items">
+                                ${orderRow.cells[4].innerHTML}
+                            </div>
+                            <div class="total">
+                                Total: ${orderRow.cells[5].textContent}
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Status:</span>
+                                <span>${orderRow.cells[6].querySelector('select').value}</span>
+                            </div>
+                            <div class="footer">
+                                <p>Agradecemos a preferência!</p>
+                                <p>${orderRow.cells[1].textContent}</p>
+                            </div>
+                        </div>
+                        <script>
+                            window.onload = function() {
+                                setTimeout(function() {
+                                    window.print();
+                                    setTimeout(function() { window.close(); }, 250);
+                                }, 500);
+                            };
+                        <\/script>
+                    </body>
+                    </html>
+                `;
+
+                printWindow.document.open();
+                printWindow.document.write(printContent);
+                printWindow.document.close();
+            } catch (error) {
+                console.error('Erro ao imprimir:', error);
+                showToast('Erro ao gerar impressão', 'error');
+            }
+        }
+
+        // Nova função para buscar e atualizar os pedidos automaticamente
+        let lastOrderId = 0; // Variável para controlar o último pedido visto
+
+        function fetchOrders() {
+            fetch('/admin/orders')
+            .then(response => response.json())
+            .then(orders => {
+                const tbody = document.querySelector('table tbody');
+                if(tbody) {
+                    // Verifica se há novos pedidos
+                    if (orders.length > 0 && orders[0].id > lastOrderId) {
+                        // Toca um som de notificação
+                        playNotificationSound();
+                        // Mostra toast para novo pedido
+                        showToast(`Novo pedido #${orders[0].id} recebido!`, 'success');
+                        lastOrderId = orders[0].id;
+                    }
+
+                    tbody.innerHTML = '';
+                    orders.forEach(order => {
+                        let itemsHtml = '';
+                        try {
+                            const items = JSON.parse(order.items);
+                            itemsHtml = items.map(item => 
+                                `<div class="order-item">
+                                    <span class="item-name">${item.name}</span>
+                                    <span class="item-quantity">x${item.quantity}</span>
+                                    <span class="item-price">${item.price}</span>
+                                 </div>`
+                            ).join('');
+                        } catch (e) {
+                            console.error('Erro ao parsear itens:', e);
+                            itemsHtml = '<div class="error">Erro ao carregar itens</div>';
+                        }
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${order.id}</td>
+                            <td>${order.created_at}</td>
+                            <td>${order.name}</td>
+                            <td>${order.address}</td>
+                            <td class="items-cell">${itemsHtml}</td>
+                            <td>${order.total}</td>
+                            <td>
+                                <select onchange="updateStatus(${order.id}, this.value)" 
+                                        class="status-select status-${order.status.toLowerCase().replace(/ /g, '-')}">
+                                    <option value="Novo" ${order.status === 'Novo' ? 'selected' : ''}>Novo</option>
+                                    <option value="Em Preparo" ${order.status === 'Em Preparo' ? 'selected' : ''}>Em Preparo</option>
+                                    <option value="Saiu para Entrega" ${order.status === 'Saiu para Entrega' ? 'selected' : ''}>Saiu para Entrega</option>
+                                    <option value="Entregue" ${order.status === 'Entregue' ? 'selected' : ''}>Entregue</option>
+                                    <option value="Cancelado" ${order.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button onclick="printOrder(${order.id})" class="print-button-small" title="Imprimir Pedido">
+                                    <span class="print-icon">🖨️</span>
+                                    <div class="print-tooltip">Imprimir Pedido #${order.id}</div>
+                                </button>
+                                <button onclick="deleteOrder(${order.id})" class="delete-button-small" title="Excluir Pedido">
+                                    <span class="delete-icon">🗑️</span>
+                                    <div class="delete-tooltip">Excluir Pedido #${order.id}</div>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            })
+            .catch(error => console.error('Erro ao buscar pedidos:', error));
+        }
+
+        // Função para tocar som de notificação
+        function playNotificationSound() {
+            const audio = new Audio('data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAKAAAJDAASEhISEhISJCQkJCQkJDExMTExMTExQ0NDQ0NDQ1VVVVVVVVVnZ2dnZ2dnZ3h4eHh4eHiJiYmJiYmJm5ubm5ubm5uvr6+vr6+vwsLCwsLCwtXV1dXV1dXn5+fn5+fn+Pj4+Pj4+P////////////////////////////////8AAAA5TEFNRTMuOTlyAm4AAAAALgkAABRGJAKDQgAARgAACSw2vMlrAAAAAAAAAAAAAAAAAAAA//vQZAAAATkXVe0EQAgAAA/woAABGJmzW/mngBAAAD/DAAAApqa3ytU1+XSpv1c4qMgAwEBgoHAxTFCZ0HOCheAwUPg4XB8+D58HwfB8/B8+fBw+D4OHwfPg+D4Pg+D5+8Hz4Pg+D4Pn7wfPg+Dh8H8+fB8+D4Pg+D7+fBw+D58H8+D4Pg+D5+8H37/+D4OHwfB8Hz58Hz94Pg++fB8/B8+D4Pn/ED37/4Pn7B8+D+IH37/4Pg4fB8+D4Pv//g+D4OH0Qf//B8/EPg+D6IP//wfB9EH//+D4OHwff///wfBw+D7////wfPg///4Pg+fB8H////Dg+fB8/////B8Hz4Pv////4Pg+D5//////wfBw+f//////w+D4P///////8Hw//////////4P//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuOTkuNVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=');
+            audio.play();
+        }
+
+        // Atualiza a cada 5 segundos
+        setInterval(fetchOrders, 5000);
+        // Busca inicial ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchOrders();
+        });
+
+        // Inicializa o gerenciador de impressão
+        const printManager = new PrintManager();
+        document.addEventListener('DOMContentLoaded', () => {
+            printManager.init();
+        });
+
+        function deleteOrder(orderId) {
+            if (confirm(`Tem certeza que deseja excluir o pedido #${orderId}?`)) {
+                fetch(`/delete_order/${orderId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showToast(data.error, 'error');
+                    } else {
+                        showToast('Pedido excluído com sucesso!', 'success');
+                        fetchOrders(); // Atualiza a lista
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showToast('Erro ao excluir pedido', 'error');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
